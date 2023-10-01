@@ -1,5 +1,6 @@
 package com.example.toychat;
 
+import com.example.toychat.ChatMessageDto.MessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     // 소켓 연결 확인
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        log.info("{} 연결됨", session.getId());
         sessions.add(session);
     }
 
@@ -58,14 +58,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
         Set<WebSocketSession> chatRoomSession = chatRoomSessionMap.get(chatRoomId);
 
         // 만약 채팅 메시지 타입이 ENTER 라면 현재 세션을 채팅방 세션에 추가
-        if (chatMessageDto.getMessageType().equals("ENTER")) {
+        if (chatMessageDto.getMessageType().equals(MessageType.ENTER)) {
             chatRoomSession.add(session);
+        } else if(chatMessageDto.getMessageType().equals(MessageType.QUIT)) {
+            chatRoomSession.remove(session);
         }
 
-        // 채팅방 세션이 3개 이상이라면 채팅방 세션 정리
-        if (chatRoomSession.size() >= 3) {
-            removeClosedSession(chatRoomSession);
-        }
+        log.info("현재 활동중인 인원수 {}", sessions.size());
+        log.info("현재 채팅방 인원수 {}", chatRoomSession.size());
 
         sendMessageToChatRoom(chatMessageDto, chatRoomSession);
     }
