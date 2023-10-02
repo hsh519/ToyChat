@@ -1,16 +1,12 @@
 package com.example.toychat;
 
+import com.example.toychat.Member.Member;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.web.socket.WebSocketSession;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Transient;
-import java.util.HashSet;
-import java.util.Set;
+import javax.persistence.*;
 
 @Entity
 @Getter @Setter
@@ -18,6 +14,14 @@ import java.util.Set;
 public class ChatRoom {
 
     @Id @GeneratedValue
-    private Long roomId;
-    private String name;
+    @Column(name = "ROOM_ID")
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "SENDER_ID")
+    private Member sender;
+
+    @ManyToOne
+    @JoinColumn(name = "RECEIVER_ID")
+    private Member receiver;
 }

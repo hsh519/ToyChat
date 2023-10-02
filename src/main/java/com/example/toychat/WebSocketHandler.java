@@ -2,6 +2,7 @@ package com.example.toychat;
 
 import com.example.toychat.ChatMessageDto.MessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@Getter
 @RequiredArgsConstructor
 public class WebSocketHandler extends TextWebSocketHandler {
 
@@ -29,30 +31,33 @@ public class WebSocketHandler extends TextWebSocketHandler {
     // 채팅 방에 대한 정보를 저장하고 각 채팅 방에 속한 WebSocket 세션들의 집합을 관리. 채팅방 ID: { session1, session2 }
     private final Map<Long, Set<WebSocketSession>> chatRoomSessionMap = new HashMap<>();
 
-    // 소켓 연결 확인
+    private final MessageRepository messageRepository;
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.add(session);
+        System.out.println("afterConnectionEstablished");
     }
 
     // 소켓 통신 시 메세지의 전송을 다루는 부분
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        System.out.println("handleTextMessage");
         // 받은 메시지의 내용을 가져옴
         String payload = message.getPayload();
-        log.info("payload {}", payload);
 
         // 메시지 내용을 Java 객체로 변환
         ChatMessageDto chatMessageDto = mapper.readValue(payload, ChatMessageDto.class);
-        log.info("session {}", chatMessageDto.toString());
+        System.out.println("chatMessageDto.toString() = " + chatMessageDto.toString());
+        messageRepository.save(chatMessageDto);
+
+        // 현재 세션이 세션 Set 에 없으면 추가
+        if (session.getAttributes().get("memberId") == null) {
+            session.getAttributes().put("memberId", chatMessageDto.getId());
+            sessions.add(session);
+        }
 
         // 채팅 메시지에 포함된 채팅방 ID를 가져옴
-        Long chatRoomId = chatMessageDto.getChatRoomId();
-
-        // 해당 채팅방 세션이 맵에 존재하지 않으면, 새 HashSet 을 만들어 세션을 추가
-        if (!chatRoomSessionMap.containsKey(chatRoomId)) {
-            chatRoomSessionMap.put(chatRoomId, new HashSet<>());
-        }
+        Long chatRoomId = chatMessageDto.getChatRoom().getId();
 
         // 해당 채팅방의 세션들을 가져옴
         Set<WebSocketSession> chatRoomSession = chatRoomSessionMap.get(chatRoomId);
@@ -64,20 +69,22 @@ public class WebSocketHandler extends TextWebSocketHandler {
             chatRoomSession.remove(session);
         }
 
-        log.info("현재 활동중인 인원수 {}", sessions.size());
-        log.info("현재 채팅방 인원수 {}", chatRoomSession.size());
+        // 채팅방 세션이 3개 이상이라면 채팅방 세션 정리
+        if (sessions.size() >= 1000) {
+            removeClosedSession(sessions, session);
+        }
 
         sendMessageToChatRoom(chatMessageDto, chatRoomSession);
     }
 
     // 채팅방에 포함된 세션 중 현재 열려있지 않는 세션은 제거하는 메서드
-    private void removeClosedSession(Set<WebSocketSession> chatRoomSession) {
-        chatRoomSession.removeIf(sessions::contains);
+    private void removeClosedSession(Set<WebSocketSession> sessions, WebSocketSession session) {
+        sessions.removeIf(s -> !session.equals(s));
     }
 
     // 특정 채팅방의 모든 WebSocket 세션에 메시지를 전송하는 메서드
     private void sendMessageToChatRoom(ChatMessageDto chatMessageDto, Set<WebSocketSession> chatRoomSession) {
-        chatRoomSession.parallelStream().forEach(sess -> sendMessage(sess, chatMessageDto));
+        chatRoomSession.parallelStream().forEach(sess -> sendMessage(sess, chatMessageDto.getMessage()));
     }
 
     // 메시지 전송 메서드

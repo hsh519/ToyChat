@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>MemberList</title>
+</head>
+<body>
+<table>
+  <tr th:each="member : ${list}" >
+    <td>
+      <a th:href="'/chat/chatRoom?receiverId=' + ${member.id}" th:text="${member.username}"></a>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
