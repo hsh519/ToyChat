@@ -2,20 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>chatList</title>
 </head>
 <body>
 
-<form action="/chat/createRoom" method="post">
-    <input type="text" name="roomName" placeholder="채팅방 이름">
-    <button type="submit" >방 만들기</button>
-</form>
-
 <table>
-    <tr th:each="room : ${roomList}" >
+    <tr th:each="member : ${chatMemberList}" >
         <td>
-            <a th:href="@{chatRoom(roomId=${room.roomId} )}"
-               th:text="${room.name}"></a>
+            <a th:href="'/chat/chatRoom?receiverId=' + ${member[0]}" th:text="${member[1]}"></a>
         </td>
     </tr>
 </table>

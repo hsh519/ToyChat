@@ -1,6 +1,7 @@
-package com.example.toychat;
+package com.example.toychat.chat;
 
-import com.example.toychat.Member.Member;
+import com.example.toychat.chatroom.ChatRoom;
+import com.example.toychat.member.Member;
 import lombok.*;
 
 import javax.persistence.*;

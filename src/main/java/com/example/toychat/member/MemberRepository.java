@@ -1,4 +1,4 @@
-package com.example.toychat.Member;
+package com.example.toychat.member;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

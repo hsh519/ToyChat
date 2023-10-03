@@ -1,7 +1,10 @@
-package com.example.toychat;
+package com.example.toychat.chat;
 
-import com.example.toychat.Member.Member;
-import com.example.toychat.Member.MemberRepository;
+import com.example.toychat.websocket.WebSocketHandler;
+import com.example.toychat.chatroom.ChatRoom;
+import com.example.toychat.chatroom.ChatRoomRepository;
+import com.example.toychat.member.Member;
+import com.example.toychat.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,21 +27,27 @@ public class ChatController {
     private final WebSocketHandler webSocketHandler;
 
     // 채팅방 목록
-//    @GetMapping("/chat/chatList")
-//    public String chatList(Model model, HttpServletRequest request) {
-//        HttpSession session = request.getSession(false);
-//        Member loginMember = (Member) session.getAttribute("loginMember");
-//
-//        List<ChatRoom> roomList = chatService.findMyChatRoom(loginMember);
-//        model.addAttribute("roomList", roomList);
-//        return "chatList";
-//    }
+    @GetMapping("/chat/chatList")
+    public String chatList(Model model, HttpServletRequest request) {
+        Member loginMember = getMember(request);
+
+        List<List<Object>> chatMemberList = new ArrayList<>();
+        for (ChatRoom chatRoom : chatRoomRepository.findAllByMember(loginMember)) {
+            if (chatRoom.getSender().getUsername().equals(loginMember.getUsername())) {
+                chatMemberList.add(Arrays.asList(chatRoom.getReceiver().getId(), chatRoom.getReceiver().getUsername()));
+            } else {
+                chatMemberList.add(Arrays.asList(chatRoom.getSender().getId(), chatRoom.getSender().getUsername()));
+            }
+        }
+
+        model.addAttribute("chatMemberList", chatMemberList);
+        return "chatList";
+    }
 
     @Transactional
     @GetMapping("/chat/chatRoom")
     public String createRoomForm(@RequestParam Long receiverId, HttpServletRequest request, Model model) {
-        HttpSession session = request.getSession(false);
-        Member sendMember = (Member) session.getAttribute("loginMember");
+        Member sendMember = getMember(request);
         model.addAttribute("sender", sendMember);
 
         Member receiverMember = memberRepository.findById(receiverId).get();
@@ -47,35 +56,32 @@ public class ChatController {
 
         if (optionalChatRoom.isPresent()) {
             // 메시지를 가져옴
-            ChatRoom chatRoom = optionalChatRoom.get();
-            List<ChatMessageDto> chatMessageList = messageRepository.findAllByChatRoom(chatRoom);
-            model.addAttribute("room", chatRoom);
+            List<ChatMessageDto> chatMessageList = messageRepository.findAllByChatRoom(optionalChatRoom.get());
+
+            model.addAttribute("room", optionalChatRoom.get());
             model.addAttribute("chatMessageList", chatMessageList);
-            System.out.println(webSocketHandler.getChatRoomSessionMap().get(chatRoom.getId()));
+
             return "chatRoom";
         }
+
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setSender(sendMember);
         chatRoom.setReceiver(receiverMember);
-        ChatRoom createRoom = chatRoomRepository.save(chatRoom);
 
-        model.addAttribute("room", chatRoom);
+        ChatRoom createRoom = chatRoomRepository.save(chatRoom);
 
         Map<Long, Set<WebSocketSession>> chatRoomSessionMap = webSocketHandler.getChatRoomSessionMap();
         chatRoomSessionMap.put(createRoom.getId(), new HashSet<>());
-        System.out.println(webSocketHandler.getChatRoomSessionMap().get(chatRoom.getId()));
+
+        model.addAttribute("room", chatRoom);
+        model.addAttribute("chatMessageList", new ChatMessageDto());
+
         return "chatRoom";
     }
-//
-//    // 채팅방 만들기
-//    @PostMapping("/chat/createRoom")
-//    public String createRoom(@RequestParam("roomName") String roomName, HttpServletRequest request, Model model) {
-//        HttpSession session = request.getSession(false);
-//        Member member = (Member) session.getAttribute("loginMember");
-//
-//        ChatRoom room = chatService.createRoom(roomName);
-//        model.addAttribute("room", room);
-//        model.addAttribute("username", member.getUsername());
-//        return "chatRoom";
-//    }
+
+    private static Member getMember(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        return loginMember;
+    }
 }

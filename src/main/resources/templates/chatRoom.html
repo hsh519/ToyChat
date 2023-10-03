@@ -5,39 +5,22 @@
   <title>Title</title>
 </head>
 <body>
+
+<div>
+  <span>메세지</span>
+  <div th:each="chatMessage : ${chatMessageList}">
+    <span th:text="${chatMessage.message}"></span>
+  </div>
+  <div class="msgArea"></div>
+</div>
+
 <input type="text" placeholder="보낼 메세지를 입력하세요." class="content">
 <button type="button" value="전송" class="sendBtn" onclick="sendMsg()">전송</button>
 <button type="button" value="방나가기" class="quit" onclick="quit()">방 나가기 </button>
-<div>
-  <span>메세지</span>
-  <div class="msgArea"></div>
-</div>
 </body>
 
 <script th:inline="javascript">
-  function enterRoom(socket){
-    var enterMsg= {
-      "messageType" : "ENTER",
-      "chatRoom":[[${room}]],
-      "sender":[[${sender}]],
-      "message":[[${sender.username}]] + "님이 입장했습니다."
-    };
-    socket.send(JSON.stringify(enterMsg));
-  }
   let socket = new WebSocket("ws://localhost:8080/ws/chat");
-
-  socket.onopen = function (e) {
-    console.log('open server!')
-    enterRoom(socket);
-  };
-
-  socket.onclose=function(e){
-    console.log('disconnet');
-  }
-
-  socket.onerror = function (e){
-    console.log(e);
-  }
 
   //메세지 수신했을 때 이벤트.
   socket.onmessage = function (e) {
@@ -47,7 +30,6 @@
     newMsg.innerText=e.data;
     msgArea.append(newMsg);
   }
-
 
   //메세지 보내기 버튼 눌렀을 떄..
   function sendMsg() {
@@ -62,15 +44,8 @@
   }
 
   function quit(){
-    var quitMsg={
-      "messageType" : "QUIT",
-      "chatRoom":[[${room}]],
-      "sender":[[${sender}]],
-      "message":[[${sender.username}]] + "님이 퇴장했습니다."
-    };
-    socket.send(JSON.stringify(quitMsg));
     socket.close();
-    location.href="/chat/chatList";
+    location.href="/member/list";
   }
 
 </script>

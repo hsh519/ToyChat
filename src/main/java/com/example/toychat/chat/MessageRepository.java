@@ -1,5 +1,6 @@
-package com.example.toychat;
+package com.example.toychat.chat;
 
+import com.example.toychat.chatroom.ChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

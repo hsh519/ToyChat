@@ -1,4 +1,4 @@
-package com.example.toychat;
+package com.example.toychat.websocket;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;

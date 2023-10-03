@@ -1,4 +1,4 @@
-package com.example.toychat.Member;
+package com.example.toychat.member;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -16,6 +16,11 @@ import java.util.List;
 public class MemberController {
 
     private final MemberRepository memberRepository;
+
+    @GetMapping(value = {"", "/"})
+    public String index() {
+        return "index";
+    }
 
     @GetMapping("/member/join")
     public String joinForm() {
@@ -38,7 +43,7 @@ public class MemberController {
         Member findMember = memberRepository.findByUsername(username);
         HttpSession session = request.getSession();
         session.setAttribute("loginMember", findMember);
-        return "redirect:/member/list";
+        return "redirect:/";
     }
 
     @GetMapping("/member/list")

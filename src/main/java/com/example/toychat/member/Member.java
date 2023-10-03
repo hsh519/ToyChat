@@ -1,4 +1,4 @@
-package com.example.toychat.Member;
+package com.example.toychat.member;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
